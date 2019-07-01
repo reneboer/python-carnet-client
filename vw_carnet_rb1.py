@@ -9,7 +9,7 @@ import re
 import requests
 import json
 import sys
-from urlparse import urlsplit
+from urllib.parse import urlsplit
 
 # Login information for the VW CarNet app
 CARNET_USERNAME = 'uid'
