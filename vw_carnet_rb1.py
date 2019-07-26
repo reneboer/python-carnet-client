@@ -203,12 +203,12 @@ def CarNetLogin(s,email, password):
 def CarNetPost(s,url_base,command):
 	print(command)
 	r = s.post(url_base + command, headers=HEADERS)
-	return r.content
+	return r.text
 	
 def CarNetPostAction(s,url_base,command,data):
 	print(command)
 	r = s.post(url_base + command, json=data, headers=HEADERS)
-	return r.content
+	return r.text
 
 def retrieveCarNetInfo(s,url_base):
 	print(CarNetPost(s,url_base, '/-/msgc/get-new-messages'))
