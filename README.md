@@ -1,6 +1,8 @@
 # python-carnet-client
 Python script that emulated the CarNet web site.
 
+This script requires the [requests](https://github.com/kennethreitz/requests) library. To install it, run `pip install requests`.
+
 Set your Carnet userID and password at the top of the script.
 
 Based of work from wez3 at https://github.com/wez3/volkswagen-carnet-client
