@@ -8,6 +8,8 @@
 # Free for use & distribution
 # Modified by youpixel - 2019-07-26
 
+# Updated to work with VW WE CONNECT web site at 16 July 2019 by Jesper Rasmussen
+
 import re
 import requests
 import json
@@ -37,6 +39,7 @@ def CarNetLogin(s,email, password):
 	# Comment youpixel - Modified the regex a bit to match the new input values defined e.g. in def extract_login_action_url
 	csrf_re = re.compile('<meta name="_csrf" content="([^"]*)"/>')
 	redurl_re = re.compile('<redirect url="([^"]*)"></redirect>')
+
 	login_action_url_re = re.compile('<formclass="content"id="emailPasswordForm"name="emailPasswordForm"method="POST"novalidateaction="([^"]*)">')
 	login_action_url2_re = re.compile('<formclass="content"id="credentialsForm"name="credentialsForm"method="POST"action="([^"]*)">')
 	
@@ -44,6 +47,7 @@ def CarNetLogin(s,email, password):
 	login_relay_state_token_re = re.compile('<inputtype="hidden"id="input_relayState"name="relayState"value="([^"]*)"/>')
 	login_csrf_re = re.compile('<inputtype="hidden"id="csrf"name="_csrf"value="([^"]*)"/>')
 	login_hmac_re = re.compile('<inputtype="hidden"id="hmac"name="hmac"value="([^"]*)"/>')
+
 
 	authcode_re = re.compile('&code=([^"]*)')
 	authstate_re = re.compile('state=([^"]*)')
@@ -76,6 +80,7 @@ def CarNetLogin(s,email, password):
 		loginhtml = r.text.replace('\n', '').replace('\r', '').replace(' ', '')
 		return login_csrf_re.search(loginhtml).group(1)
 
+
 	def extract_code(r):
 		return authcode_re.search(r).group(1)
 
@@ -105,11 +110,11 @@ def CarNetLogin(s,email, password):
 		return ""
 	login_form_url = r.headers.get("location")
 
+
 	r = s.get(login_form_url, headers=AUTHHEADERS)
 	if r.status_code != 200:
 		return ""
 	login_action_url = auth_base_url + extract_login_action_url(r)
-
 	login_relay_state_token = extract_login_relay_state_token(r)
 	hmac_token = extract_login_hmac(r)
 	login_csrf = extract_login_csrf(r)
@@ -122,6 +127,7 @@ def CarNetLogin(s,email, password):
 	# Comment youpixel - Sending E-Mail address for login and get URL of second step
 	post_data = {
 		'email': email,
+
 		'relayState': login_relay_state_token,
 		'_csrf': login_csrf,
 		'hmac': hmac_token,
@@ -170,7 +176,6 @@ def CarNetLogin(s,email, password):
 	portlet_code = extract_code(r.url)
 	
 	state = extract_csrf(r)
-
 	# Extract csrf and use in new url as post
 	# We need to include post data
 	# _33_WAR_cored5portlet_code=
@@ -198,7 +203,6 @@ def CarNetLogin(s,email, password):
 	HEADERS["X-CSRF-Token"] = csrf
 	#print("Login successful. Base_json_url is found as", base_json_url)
 	return base_json_url
-
 	
 def CarNetPost(s,url_base,command):
 	print(command)
