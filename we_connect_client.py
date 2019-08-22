@@ -185,7 +185,6 @@ def CarNetLogin(session, email, password):
     if login_action_url_response.status_code != 200:
         return '', 'Failed to get login/identiefer page.'
     auth_request_headers['Referer'] = login_action_url
-    auth_request_headers['Content-Type'] = 'application/x-www-form-urlencoded'
     login_action2_url = auth_base_url + '/signin-service/v1/' + client_id + '/login/authenticate'
     # Get 2nd hmac token from form content.
     login_action_url_response_data = remove_newline_chars(login_action_url_response.text)
