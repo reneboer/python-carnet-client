@@ -184,8 +184,6 @@ def CarNetLogin(session, email, password):
     # redirected GET returns form used below.
     if login_action_url_response.status_code != 200:
         return '', 'Failed to get login/identiefer page.'
-    auth_request_headers['Referer'] = login_action_url
-    login_action2_url = auth_base_url + '/signin-service/v1/' + client_id + '/login/authenticate'
     # Get 2nd hmac token from form content.
     login_action_url_response_data = remove_newline_chars(login_action_url_response.text)
     hmac_token2 = extract_login_hmac(login_action_url_response_data)
@@ -195,7 +193,9 @@ def CarNetLogin(session, email, password):
 
     # Step 6
     # Post login data to "login action 2" url
-    # https://identity.vwgroup.io/signin-service/v1/<client_id>/login/authenticate 
+    # https://identity.vwgroup.io/signin-service/v1/<client_id>/login/authenticate
+    auth_request_headers['Referer'] = login_action_url
+    login_action2_url = auth_base_url + '/signin-service/v1/' + client_id + '/login/authenticate'
     login_data = {
         'email': email,
         'password': password,
