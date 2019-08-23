@@ -11,7 +11,7 @@ It has similar functions and Charging control for electric VW's
 The first two parameters are your userid and password (in single quotes!), the optional third is the command.
 
 Avaible commands to the script are:
-  startCharge, stopCharge, startClimat, stopClimat, startClimate, stopClimate, startWindowMelt, stopWindowMelt
+  startCharge, stopCharge, getCharge, startClimat, stopClimat, getClimat, startClimate, getClimate, stopClimate, startWindowMelt, stopWindowMelt, getWindowMelt
 
 If no command is specified the full car status is retreived.
 
