@@ -1,13 +1,14 @@
 #!/usr/bin/python
 # Script to emulate VW WE Connect web site login and commands to VW car.
 # Author  : Rene Boer
-# Version : 2.0
-# Date    : 21 Aug 2019
+# Version : 2.1
+# Date    : 23 Aug 2019
 
 # Should work on python 2 and 3
 
 # Free for use & distribution
 
+# V2.1, added synonyms for startClimat and stopClimat commands (startClimate, stopClimate)
 # V2.0 for new VW WE Connect portal thanks to youpixel - 2019-07-26
 # Thanks to birgersp for a number of cleanups and rewrites. See https://github.com/birgersp/carnet-client
 
@@ -431,17 +432,17 @@ if __name__ == '__main__':
         i = 3
         while (i < len(sys.argv)):
             argument = sys.argv[i]
-            if(argument == 'startCharge'):
+            if argument == 'startCharge':
                 startCharge(session, url)
-            elif(argument == 'stopCharge'):
+            elif argument == 'stopCharge':
                 stopCharge(session, url)
-            elif(argument == 'startClimat'):
+            elif argument == 'startClimat' or argument == 'startClimate':
                 startClimat(session, url)
-            elif(argument == 'stopClimat'):
+            elif argument == 'stopClimat' or argument == 'stopClimate':
                 stopClimat(session, url)
-            elif(argument == 'startWindowMelt'):
+            elif argument == 'startWindowMelt':
                 startWindowMelt(session, url)
-            elif(argument == 'stopWindowMelt'):
+            elif argument == 'stopWindowMelt':
                 stopWindowMelt(session, url)
             i = i + 1
 
