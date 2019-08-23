@@ -1,13 +1,14 @@
 #!/usr/bin/python
 # Script to emulate VW WE Connect web site login and commands to VW car.
 # Author  : Rene Boer
-# Version : 2.1
+# Version : 2.2
 # Date    : 23 Aug 2019
 
 # Should work on python 2 and 3
 
 # Free for use & distribution
 
+# Added getCharge, getCharge, getWindowMelt status commands
 # V2.1, added synonyms for startClimat and stopClimat commands (startClimate, stopClimate)
 # V2.0 for new VW WE Connect portal thanks to youpixel - 2019-07-26
 # Thanks to birgersp for a number of cleanups and rewrites. See https://github.com/birgersp/carnet-client
@@ -185,6 +186,9 @@ def CarNetLogin(session, email, password):
     # redirected GET returns form used below.
     if login_action_url_response.status_code != 200:
         return '', 'Failed to get login/identiefer page.'
+    auth_request_headers['Referer'] = login_action_url
+    auth_request_headers['Content-Type'] = 'application/x-www-form-urlencoded'
+    login_action2_url = auth_base_url + '/signin-service/v1/' + client_id + '/login/authenticate'
     # Get 2nd hmac token from form content.
     login_action_url_response_data = remove_newline_chars(login_action_url_response.text)
     hmac_token2 = extract_login_hmac(login_action_url_response_data)
@@ -194,9 +198,7 @@ def CarNetLogin(session, email, password):
 
     # Step 6
     # Post login data to "login action 2" url
-    # https://identity.vwgroup.io/signin-service/v1/<client_id>/login/authenticate
-    auth_request_headers['Referer'] = login_action_url
-    login_action2_url = auth_base_url + '/signin-service/v1/' + client_id + '/login/authenticate'
+    # https://identity.vwgroup.io/signin-service/v1/<client_id>/login/authenticate 
     login_data = {
         'email': email,
         'password': password,
@@ -358,6 +360,13 @@ def stopCharge(session, url_base):
     print(CarNetPostAction(session, url_base, '/-/emanager/charge-battery', post_data))
     return 0
 
+def getCharge(session, url_base):
+    try:
+        estat = json.loads(CarNetPost(session, url_base, '/-/emanager/get-emanager'))
+        print('{"errorCode":"0","chargingState":"' + estat.get('EManager').get('rbc').get('status').get('chargingState') + '"}')
+    except:
+        print('{"errorCode":"2","errorMsg":"Failed to get currect charging state"}') 	
+    return 0
 
 def startClimat(session, url_base):
     post_data = {
@@ -376,6 +385,13 @@ def stopClimat(session, url_base):
     print(CarNetPostAction(session, url_base, '/-/emanager/trigger-climatisation', post_data))
     return 0
 
+def getClimat(session, url_base):
+    try:
+        estat = json.loads(CarNetPost(session, url_base, '/-/emanager/get-emanager'))
+        print('{"errorCode":"0","climatisationState":"' + estat.get('EManager').get('rpc').get('status').get('climatisationState') + '"}')
+    except:
+        print('{"errorCode":"2","errorMsg":"Failed to get currect climate state"}') 	
+    return 0
 
 def startWindowMelt(session, url_base):
     post_data = {
@@ -390,6 +406,15 @@ def stopWindowMelt(session, url_base):
         'triggerAction': False
     }
     print(CarNetPostAction(session, url_base, '/-/emanager/trigger-windowheating', post_data))
+    return 0
+
+def getWindowMelt(session, url_base):
+    try:
+        estat = json.loads(CarNetPost(session, url_base, '/-/emanager/get-emanager'))
+        status = estat.get('EManager').get('rpc').get('status')
+        print('{"errorCode":"0","windowHeatingStateFront":"' + status.get('windowHeatingStateFront') + '","windowHeatingStateRear":"' + status.get('windowHeatingStateRear') + '"}')
+    except:
+        print('{"errorCode":"2","errorMsg":"Failed to get currect windows melt state"}') 	
     return 0
 
 
@@ -435,14 +460,20 @@ if __name__ == '__main__':
                 startCharge(session, url)
             elif argument == 'stopCharge':
                 stopCharge(session, url)
+            elif argument == 'getCharge':
+                getCharge(session, url)
             elif argument == 'startClimat' or argument == 'startClimate':
                 startClimat(session, url)
             elif argument == 'stopClimat' or argument == 'stopClimate':
                 stopClimat(session, url)
+            elif argument == 'getClimat' or argument == 'getClimate':
+                getClimat(session, url)
             elif argument == 'startWindowMelt':
                 startWindowMelt(session, url)
             elif argument == 'stopWindowMelt':
                 stopWindowMelt(session, url)
+            elif argument == 'getWindowMelt':
+                getWindowMelt(session, url)
             i = i + 1
 
         # Below is the flow the web app is using to determine when action really started
