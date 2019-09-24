@@ -1,21 +1,20 @@
 #!/usr/bin/python
 # Script to emulate VW WE Connect web site login and commands to VW car.
 # Author  : Rene Boer
-# Version : 2.2
-# Date    : 23 Aug 2019
+# Version : 2.3
+# Date    : 24 Sept 2019
 
 # Should work on python 2 and 3
 
 # Free for use & distribution
 
-# Added getCharge, getCharge, getWindowMelt status commands
-# V2.1, added synonyms for startClimat and stopClimat commands (startClimate, stopClimate)
+# V2.3 Added command line parser and spin remoteLock
+# V2.2 Added getCharge, getCharge, getWindowMelt status commands
+# V2.1 added synonyms for startClimat and stopClimat commands (startClimate, stopClimate)
 # V2.0 for new VW WE Connect portal thanks to youpixel - 2019-07-26
 # Thanks to birgersp for a number of cleanups and rewrites. See https://github.com/birgersp/carnet-client
 
-# Set to False to disable all debugging
-debug = True
-#debug = False
+debug = False
 
 import re
 import requests
@@ -36,6 +35,7 @@ except ImportError:
     import httplib as http_client
 import logging
 # ---- end uncomment
+import argparse
 
 
 portal_base_url = 'https://www.portal.volkswagen-we.com'
@@ -237,7 +237,7 @@ def CarNetLogin(session, email, password):
     # https://www.portal.volkswagen-we.com/portal/web/guest/complete-login?p_auth=<state>&p_p_id=33_WAR_cored5portlet&p_p_lifecycle=1&p_p_state=normal&p_p_mode=view&p_p_col_id=column-1&p_p_col_count=1&_33_WAR_cored5portlet_javax.portlet.action=getLoginStatus
     auth_request_headers['Referer'] = ref2_url
     portlet_data = {'_33_WAR_cored5portlet_code': portlet_code}
-    final_login_url = base_url + '/portal/web/guest/complete-login?p_auth=' + state +        '&p_p_id=33_WAR_cored5portlet&p_p_lifecycle=1&p_p_state=normal&p_p_mode=view&p_p_col_id=column-1&p_p_col_count=1&_33_WAR_cored5portlet_javax.portlet.action=getLoginStatus'
+    final_login_url = base_url + '/portal/web/guest/complete-login?p_auth=' + state + '&p_p_id=33_WAR_cored5portlet&p_p_lifecycle=1&p_p_state=normal&p_p_mode=view&p_p_col_id=column-1&p_p_col_count=1&_33_WAR_cored5portlet_javax.portlet.action=getLoginStatus'
     complete_login_response = session.post(final_login_url, data=portlet_data, allow_redirects=False, headers=auth_request_headers)
     if complete_login_response.status_code != 302:
         return '', 'Failed to post portlet page.'
@@ -269,6 +269,17 @@ def CarNetPost(session, url_base, command):
 def CarNetPostAction(session, url_base, command, data):
     print(command)
     r = session.post(url_base + command, json=data, headers=request_headers)
+    return r.text
+
+def CarNetCheckSecurityLevel(session, url_base, data):
+    print('Check security level for: ' + data.get('operationId'))
+    cc = session.cookies['GUEST_LANGUAGE_ID']
+    if cc: 
+        cc = cc[0:2]
+    else:
+        cc = 'en'
+    url = portal_base_url + '/portal/group/' + cc + '/edit-profile/-/profile/check-security-level'
+    r = session.post(url, json=data, headers=request_headers)
     return r.text
 
 
@@ -350,7 +361,6 @@ def retrieveCarNetInfo(session, url_base):
     # Obsolete request: print(CarNetPost(session, url_base, '/-/vsr/request-vsr'))
     return 0
 
-
 def startCharge(session, url_base):
     post_data = {
         'triggerAction': True,
@@ -373,7 +383,7 @@ def getCharge(session, url_base):
         estat = json.loads(CarNetPost(session, url_base, '/-/emanager/get-emanager'))
         print('{"errorCode":"0","chargingState":"' + estat.get('EManager').get('rbc').get('status').get('chargingState') + '"}')
     except:
-        print('{"errorCode":"2","errorMsg":"Failed to get currect charging state"}') 	
+        print('{"errorCode":"2","errorMsg":"Failed to get currect charging state"}')    
     return 0
 
 def startClimat(session, url_base):
@@ -398,8 +408,22 @@ def getClimat(session, url_base):
         estat = json.loads(CarNetPost(session, url_base, '/-/emanager/get-emanager'))
         print('{"errorCode":"0","climatisationState":"' + estat.get('EManager').get('rpc').get('status').get('climatisationState') + '"}')
     except:
-        print('{"errorCode":"2","errorMsg":"Failed to get currect climate state"}') 	
+        print('{"errorCode":"2","errorMsg":"Failed to get current climate state"}')     
     return 0
+
+def getVIN(session, url_base, index):
+    try:
+        estat = json.loads(CarNetPost(session, url_base, '/-/mainnavigation/get-fully-loaded-cars'))
+        resp = { 
+           'errorCode': '0',
+           'vin': estat.get('fullyLoadedVehiclesResponse').get('vehiclesNotFullyLoaded')[index].get('vin') 
+        }
+    except:
+        resp = {
+            'errorCode': '2',
+            'errorMsg': 'Failed to get VIN for index ' + index
+        }   
+    return resp
 
 def startWindowMelt(session, url_base):
     post_data = {
@@ -422,18 +446,60 @@ def getWindowMelt(session, url_base):
         status = estat.get('EManager').get('rpc').get('status')
         print('{"errorCode":"0","windowHeatingStateFront":"' + status.get('windowHeatingStateFront') + '","windowHeatingStateRear":"' + status.get('windowHeatingStateRear') + '"}')
     except:
-        print('{"errorCode":"2","errorMsg":"Failed to get currect windows melt state"}') 	
+        print('{"errorCode":"2","errorMsg":"Failed to get currect windows melt state"}')    
     return 0
 
+def remoteLock(session, url_base, spin, vin):
+    # untested
+    request_headers['Referer'] = url_base + '/-/service-container/services/all'
+    post_data = {
+        'operationId': 'LOCK',
+        'serviceId': 'rlu_v1',
+        'vin': vin }
+    print(CarNetCheckSecurityLevel(session, url_base, post_data))
+    
+    post_data = {
+        'spin': spin }
+    print(CarNetPostAction(session, url_base, '/-/vsr/remote-lock', post_data))
+    request_headers['Referer'] = url_base
+    return 0
+
+def remoteUnlock(session, url_base, spin, vin):
+    # untested
+    request_headers['Referer'] = url_base + '/-/service-container/services/all'
+    post_data = {
+        'operationId': 'UNLOCK',
+        'serviceId': 'rlu_v1',
+        'vin': vin }
+    print(CarNetCheckSecurityLevel(session, url_base, post_data))
+    
+    post_data = {
+        'spin': spin }
+    print(CarNetPostAction(session, url_base, '/-/vsr/remote-unlock', post_data))
+    request_headers['Referer'] = url_base
+    return 0
 
 if __name__ == '__main__':
+    # parse arguments
+    parser = argparse.ArgumentParser(description='Control your Connected VW.')
+    parser.add_argument('-u', '--user', required=True, help='Your WE-Connect user id.')
+    parser.add_argument('-p', '--password', required=True, help='Your WE-Connect password.')
+    parser.add_argument('-v', '--vin', help='Your car VIN if more cars on account.')
+    parser.add_argument('-c', '--command', choices=['startCharge', 'stopCharge', 'getCharge', 'startClimate', 'stopClimate', 'getClimate', 'startWindowMelt', 'stopWindowMelt','getWindowMelt', 'getVIN', 'remoteLock', 'remoteUnlock'], help='Command to send.')
+    parser.add_argument('-s', '--spin', help='Your WE-Connect s-pin needed for some commands.')
+    parser.add_argument('-i', '--index', type=int, default=0, choices=range(0, 9), help='To get the VIN for the N-th car.')
+    parser.add_argument('-d', '--debug', action="store_true", help='Show debug commands.')
+    args = parser.parse_args()
+    CARNET_USERNAME = args.user
+    CARNET_PASSWORD = args.password
+    CARNET_COMMAND = ''
+    CARNET_VIN = args.vin
+    CARNET_SPIN = args.spin
+    if args.command:
+        CARNET_COMMAND = args.command
+    if args.debug:
+        debug = True
 
-    if len(sys.argv) < 3:
-        print('Usage: (email) (password)')
-        sys.exit()
-
-    CARNET_USERNAME = sys.argv[1]
-    CARNET_PASSWORD = sys.argv[2]
 
     # Enable debugging of http requests (gives more details on Python 2 than 3 it seems)    
     if debug:
@@ -457,41 +523,53 @@ if __name__ == '__main__':
     if url == '':
         print('Failed to login', msg)
         sys.exit()
-
-    if (len(sys.argv) == 3):
-        retrieveCarNetInfo(session, url)
+        
+    # If a VIN is specified, put that in the base URL so more than just first car can be controlled (not tested)    
+    if CARNET_VIN:
+        vin_start = url.rfind('/',1,-2)
+        url = url[0:vin_start+1] + CARNET_VIN + '/'
     else:
-        i = 3
-        while (i < len(sys.argv)):
-            argument = sys.argv[i]
-            if argument == 'startCharge':
-                startCharge(session, url)
-            elif argument == 'stopCharge':
-                stopCharge(session, url)
-            elif argument == 'getCharge':
-                getCharge(session, url)
-            elif argument == 'startClimat' or argument == 'startClimate':
-                startClimat(session, url)
-            elif argument == 'stopClimat' or argument == 'stopClimate':
-                stopClimat(session, url)
-            elif argument == 'getClimat' or argument == 'getClimate':
-                getClimat(session, url)
-            elif argument == 'startWindowMelt':
-                startWindowMelt(session, url)
-            elif argument == 'stopWindowMelt':
-                stopWindowMelt(session, url)
-            elif argument == 'getWindowMelt':
-                getWindowMelt(session, url)
-            i = i + 1
+        resp = getVIN(session, url, args.index)
+        CARNET_VIN = resp.get('vin')
+        
+    if debug: print('Using VIN : ' + CARNET_VIN)
+    
+    if CARNET_COMMAND == 'startCharge':
+        startCharge(session, url)
+    elif CARNET_COMMAND == 'stopCharge':
+        stopCharge(session, url)
+    elif CARNET_COMMAND == 'getCharge':
+        getCharge(session, url)
+    elif CARNET_COMMAND == 'startClimat' or CARNET_COMMAND == 'startClimate':
+        startClimat(session, url)
+    elif CARNET_COMMAND == 'stopClimat' or CARNET_COMMAND == 'stopClimate':
+        stopClimat(session, url)
+    elif CARNET_COMMAND == 'getClimat' or CARNET_COMMAND == 'getClimate':
+        getClimat(session, url)
+    elif CARNET_COMMAND == 'startWindowMelt':
+        startWindowMelt(session, url)
+    elif CARNET_COMMAND == 'stopWindowMelt':
+        stopWindowMelt(session, url)
+    elif CARNET_COMMAND == 'getWindowMelt':
+        getWindowMelt(session, url)
+    elif CARNET_COMMAND == 'getVIN':
+        print(getVIN(session, url, args.index))
+    elif CARNET_COMMAND == 'remoteLock':
+        remoteLock(session, url, CARNET_SPIN, CARNET_VIN)
+    elif CARNET_COMMAND == 'remoteUnlock':
+        remoteUnlock(session, url, CARNET_SPIN, CARNET_VIN)
+    else:
+        retrieveCarNetInfo(session, url)
 
-        # Below is the flow the web app is using to determine when action really started
-        # You should look at the notifications until it returns a status JSON like this
-        # {"errorCode":"0","actionNotificationList":[{"actionState":"SUCCEEDED","actionType":"STOP","serviceType":"RBC","errorTitle":null,"errorMessage":null}]}
-        print(CarNetPost(session, url, '/-/msgc/get-new-messages'))
-        print(CarNetPost(session, url, '/-/emanager/get-notifications'))
-        print(CarNetPost(session, url, '/-/msgc/get-new-messages'))
-        print(CarNetPost(session, url, '/-/emanager/get-emanager'))
+    # Below is the flow the web app is using to determine when action really started
+    # You should look at the notifications until it returns a status JSON like this
+    # {"errorCode":"0","actionNotificationList":[{"actionState":"SUCCEEDED","actionType":"STOP","serviceType":"RBC","errorTitle":null,"errorMessage":null}]}
+    #print(CarNetPost(session, url, '/-/msgc/get-new-messages'))
+    #print(CarNetPost(session, url, '/-/emanager/get-notifications'))
+    #print(CarNetPost(session, url, '/-/msgc/get-new-messages'))
+    #print(CarNetPost(session, url, '/-/emanager/get-emanager'))
 
     # End session properly
     print(CarNetPost(session, url, '/-/logout/revoke'))
     
+
