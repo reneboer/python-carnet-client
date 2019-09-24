@@ -14,8 +14,8 @@
 # Thanks to birgersp for a number of cleanups and rewrites. See https://github.com/birgersp/carnet-client
 
 # Set to False to disable all debugging
-#debug = True
-debug = False
+debug = True
+#debug = False
 
 import re
 import requests
@@ -99,6 +99,7 @@ def CarNetLogin(session, email, password):
     auth_base_url = 'https://identity.vwgroup.io'
 
     # Step 1
+    if debug: print ("Step 1 ===========")
     # Get initial CSRF from landing page to get login process started.
     # Python Session handles JSESSIONID cookie
     landing_page_url = base_url + '/portal/en_GB/web/guest/home'
@@ -114,6 +115,7 @@ def CarNetLogin(session, email, password):
     # Note: Portal performs a get-supported-browsers and get-countries at this point. We assumed en_GB
     
     # Step 2
+    if debug: print ("Step 2 ===========")
     # Get login page url. POST returns JSON with loginURL for next step.
     # returned loginURL includes client_id for step 4
     auth_request_headers = {
@@ -138,6 +140,7 @@ def CarNetLogin(session, email, password):
         return '', 'Failed to get client_id.'
 
     # Step 3
+    if debug: print ("Step 3 ===========")
     # Get login form url we are told to use, it will give us a new location.
     # response header location (redirect URL) includes relayState for step 5
     # https://identity.vwgroup.io/oidc/v1/authorize......
@@ -151,6 +154,7 @@ def CarNetLogin(session, email, password):
         return '', 'Failed to get relay State.'
 
     # Step 4
+    if debug: print ("Step 4 ===========")
     # Get login action url, relay state. hmac token 1 and login CSRF from form contents
     # https://identity.vwgroup.io/signin-service/v1/signin/<client_id>@relayState=<relay_state>
     login_form_location_response = session.get(login_form_url, headers=auth_request_headers)
@@ -169,6 +173,7 @@ def CarNetLogin(session, email, password):
         return '', 'Failed to get 1st HMAC token.'
 
     # Step 5
+    if debug: print ("Step 5 ===========")
     # Post initial login data
     # https://identity.vwgroup.io/signin-service/v1/<client_id>/login/identifier
     del auth_request_headers['X-CSRF-Token']
@@ -186,9 +191,6 @@ def CarNetLogin(session, email, password):
     # redirected GET returns form used below.
     if login_action_url_response.status_code != 200:
         return '', 'Failed to get login/identiefer page.'
-    auth_request_headers['Referer'] = login_action_url
-    auth_request_headers['Content-Type'] = 'application/x-www-form-urlencoded'
-    login_action2_url = auth_base_url + '/signin-service/v1/' + client_id + '/login/authenticate'
     # Get 2nd hmac token from form content.
     login_action_url_response_data = remove_newline_chars(login_action_url_response.text)
     hmac_token2 = extract_login_hmac(login_action_url_response_data)
@@ -197,8 +199,11 @@ def CarNetLogin(session, email, password):
         return '', 'Failed to get 2nd HMAC token.'
 
     # Step 6
+    if debug: print ("Step 6 ===========")
     # Post login data to "login action 2" url
     # https://identity.vwgroup.io/signin-service/v1/<client_id>/login/authenticate 
+    auth_request_headers['Referer'] = login_action_url
+    auth_request_headers['Content-Type'] = 'application/x-www-form-urlencoded'
     login_data = {
         'email': email,
         'password': password,
@@ -207,6 +212,7 @@ def CarNetLogin(session, email, password):
         '_csrf': login_csrf,
         'login': 'true'
     }
+    login_action2_url = auth_base_url + '/signin-service/v1/' + client_id + '/login/authenticate'
     login_post_response = session.post(login_action2_url, data=login_data, headers=auth_request_headers, allow_redirects=True)
     # performs a 302 redirect to GET https://identity.vwgroup.io/oidc/v1/oauth/sso?clientId=<client_id>&relayState=<relay_state>&userId=<userID>&HMAC=<...>"
     # then a 302 redirect to GET https://identity.vwgroup.io/consent/v1/users/<userID>/<client_id>?scopes=openid%20profile%20birthdate%20nickname%20address%20email%20phone%20cars%20dealers%20mbb&relay_state=1bc582f3ff177afde55b590af92e17a006f9c532&callback=https://identity.vwgroup.io/oidc/v1/oauth/client/callback&hmac=<.....>
@@ -225,6 +231,7 @@ def CarNetLogin(session, email, password):
         return '', 'Failed to get state.'
 
     # Step 7
+    if debug: print ("Step 7 ===========")
     # Site first does a POST https://www.portal.volkswagen-we.com/portal/web/guest/complete-login/-/mainnavigation/get-countries
     # Post login data to complete login url
     # https://www.portal.volkswagen-we.com/portal/web/guest/complete-login?p_auth=<state>&p_p_id=33_WAR_cored5portlet&p_p_lifecycle=1&p_p_state=normal&p_p_mode=view&p_p_col_id=column-1&p_p_col_count=1&_33_WAR_cored5portlet_javax.portlet.action=getLoginStatus
@@ -236,6 +243,7 @@ def CarNetLogin(session, email, password):
         return '', 'Failed to post portlet page.'
 
     # Step 8
+    if debug: print ("Step 8 ===========")
     # Get base JSON url for commands 
     base_json_url = complete_login_response.headers.get('location')
     base_json_response = session.get(base_json_url, headers=auth_request_headers)
