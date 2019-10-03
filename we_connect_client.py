@@ -457,7 +457,7 @@ def getWindowMelt(session, url_base):
 
 def remoteLock(session, url_base, spin, vin):
     # untested
-    request_headers['Referer'] = url_base + '/-/service-container/services/all'
+    #request_headers['Referer'] = url_base + '/-/service-container/services/all'
     post_data = {
         'operationId': 'LOCK',
         'serviceId': 'rlu_v1',
@@ -467,18 +467,18 @@ def remoteLock(session, url_base, spin, vin):
     post_data = {
         'spin': spin }
     print(CarNetPostAction(session, url_base, '/-/vsr/remote-lock', post_data))
-    request_headers['Referer'] = url_base
+    #request_headers['Referer'] = url_base
     return 0
 
 def remoteUnlock(session, url_base):
-    request_headers['Referer'] = url_base + '/-/service-container/services/all'
+    #request_headers['Referer'] = url_base + '/-/service-container/services/all'
     print(CarNetPost(session, url_base, '/-/vsr/remote-unlock'))
-    request_headers['Referer'] = url_base
+    #request_headers['Referer'] = url_base
     return 0
 
 def startRemoteAccessVentilation(session, url_base, spin, vin):
     # untested
-    request_headers['Referer'] = url_base + '/-/service-container/services/all'
+    #request_headers['Referer'] = url_base + '/-/service-container/services/all'
     post_data = {
         'operationId':'P_QSACT',
         'serviceId':'rheating_v1',
@@ -489,18 +489,18 @@ def startRemoteAccessVentilation(session, url_base, spin, vin):
         'startMode':'VENTILATION',
         'spin': spin }
     print(CarNetPostAction(session, url_base, '/-/rah/quick-start', post_data))
-    request_headers['Referer'] = url_base
+    #request_headers['Referer'] = url_base
     return 0
 
 def stopRemoteAccessVentilation(session, url_base):
-    request_headers['Referer'] = url_base + '/-/service-container/services/all'
+    #request_headers['Referer'] = url_base + '/-/service-container/services/all'
     print(CarNetPost(session, url_base, '/-/rah/quick-stop'))
-    request_headers['Referer'] = url_base
+    #request_headers['Referer'] = url_base
     return 0
 
 def startRemoteAccessHeating(session, url_base, spin, vin):
     # untested
-    request_headers['Referer'] = url_base + '/-/service-container/services/all'
+    #request_headers['Referer'] = url_base + '/-/service-container/services/all'
     post_data = {
         'operationId':'P_QSACT',
         'serviceId':'rheating_v1',
@@ -511,13 +511,13 @@ def startRemoteAccessHeating(session, url_base, spin, vin):
         'startMode':'HEATING',
         'spin': spin }
     print(CarNetPostAction(session, url_base, '/-/rah/quick-start', post_data))
-    request_headers['Referer'] = url_base
+    #request_headers['Referer'] = url_base
     return 0
 
 def stopRemoteAccessHeating(session, url_base):
-    request_headers['Referer'] = url_base + '/-/service-container/services/all'
+    #request_headers['Referer'] = url_base + '/-/service-container/services/all'
     print(CarNetPost(session, url_base, '/-/rah/quick-stop'))
-    request_headers['Referer'] = url_base
+    #request_headers['Referer'] = url_base
     return 0
 
 if __name__ == '__main__':
