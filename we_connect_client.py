@@ -1,13 +1,15 @@
 #!/usr/bin/python
 # Script to emulate VW WE Connect web site login and commands to VW car.
 # Author  : Rene Boer
-# Version : 2.3
-# Date    : 24 Sept 2019
+# Version : 2.4
+# Date    : 3 Oct 2019
 
 # Should work on python 2 and 3
 
 # Free for use & distribution
 
+# V2.4 Fix on getting country code for CarNetCheckSecurityLevel
+#      Added commands for remoteUnlock, startRemoteVentilation, stopRemoteVentilation, startRemoteHeating, stopRemoteHeating
 # V2.3 Added command line parser and spin remoteLock
 # V2.2 Added getCharge, getCharge, getWindowMelt status commands
 # V2.1 added synonyms for startClimat and stopClimat commands (startClimate, stopClimate)
@@ -275,7 +277,11 @@ def CarNetCheckSecurityLevel(session, url_base, data):
     print('Check security level for: ' + data.get('operationId'))
     cc = session.cookies['GUEST_LANGUAGE_ID']
     if cc: 
-        cc = cc[0:2]
+        if (len(cc) == 5):
+            cc = cc[3:5]
+            cc = cc.lower()
+        else:
+            cc = cc[0:2]
     else:
         cc = 'en'
     url = portal_base_url + '/portal/group/' + cc + '/edit-profile/-/profile/check-security-level'
@@ -464,18 +470,53 @@ def remoteLock(session, url_base, spin, vin):
     request_headers['Referer'] = url_base
     return 0
 
-def remoteUnlock(session, url_base, spin, vin):
+def remoteUnlock(session, url_base):
+    request_headers['Referer'] = url_base + '/-/service-container/services/all'
+    print(CarNetPost(session, url_base, '/-/vsr/remote-unlock'))
+    request_headers['Referer'] = url_base
+    return 0
+
+def startRemoteAccessVentilation(session, url_base, spin, vin):
     # untested
     request_headers['Referer'] = url_base + '/-/service-container/services/all'
     post_data = {
-        'operationId': 'UNLOCK',
-        'serviceId': 'rlu_v1',
+        'operationId':'P_QSACT',
+        'serviceId':'rheating_v1',
         'vin': vin }
     print(CarNetCheckSecurityLevel(session, url_base, post_data))
-    
+
     post_data = {
+        'startMode':'VENTILATION',
         'spin': spin }
-    print(CarNetPostAction(session, url_base, '/-/vsr/remote-unlock', post_data))
+    print(CarNetPostAction(session, url_base, '/-/rah/quick-start', post_data))
+    request_headers['Referer'] = url_base
+    return 0
+
+def stopRemoteAccessVentilation(session, url_base):
+    request_headers['Referer'] = url_base + '/-/service-container/services/all'
+    print(CarNetPost(session, url_base, '/-/rah/quick-stop'))
+    request_headers['Referer'] = url_base
+    return 0
+
+def startRemoteAccessHeating(session, url_base, spin, vin):
+    # untested
+    request_headers['Referer'] = url_base + '/-/service-container/services/all'
+    post_data = {
+        'operationId':'P_QSACT',
+        'serviceId':'rheating_v1',
+        'vin': vin }
+    print(CarNetCheckSecurityLevel(session, url_base, post_data))
+
+    post_data = {
+        'startMode':'HEATING',
+        'spin': spin }
+    print(CarNetPostAction(session, url_base, '/-/rah/quick-start', post_data))
+    request_headers['Referer'] = url_base
+    return 0
+
+def stopRemoteAccessHeating(session, url_base):
+    request_headers['Referer'] = url_base + '/-/service-container/services/all'
+    print(CarNetPost(session, url_base, '/-/rah/quick-stop'))
     request_headers['Referer'] = url_base
     return 0
 
@@ -485,7 +526,7 @@ if __name__ == '__main__':
     parser.add_argument('-u', '--user', required=True, help='Your WE-Connect user id.')
     parser.add_argument('-p', '--password', required=True, help='Your WE-Connect password.')
     parser.add_argument('-v', '--vin', help='Your car VIN if more cars on account.')
-    parser.add_argument('-c', '--command', choices=['startCharge', 'stopCharge', 'getCharge', 'startClimate', 'stopClimate', 'getClimate', 'startWindowMelt', 'stopWindowMelt','getWindowMelt', 'getVIN', 'remoteLock', 'remoteUnlock'], help='Command to send.')
+    parser.add_argument('-c', '--command', choices=['startCharge', 'stopCharge', 'getCharge', 'startClimate', 'stopClimate', 'getClimate', 'startWindowMelt', 'stopWindowMelt','getWindowMelt', 'getVIN', 'remoteLock', 'remoteUnlock', 'startRemoteVentilation', 'stopRemoteVentilation', 'startRemoteHeating', 'stopRemoteHeating'], help='Command to send.')
     parser.add_argument('-s', '--spin', help='Your WE-Connect s-pin needed for some commands.')
     parser.add_argument('-i', '--index', type=int, default=0, choices=range(0, 9), help='To get the VIN for the N-th car.')
     parser.add_argument('-d', '--debug', action="store_true", help='Show debug commands.')
@@ -557,7 +598,15 @@ if __name__ == '__main__':
     elif CARNET_COMMAND == 'remoteLock':
         remoteLock(session, url, CARNET_SPIN, CARNET_VIN)
     elif CARNET_COMMAND == 'remoteUnlock':
-        remoteUnlock(session, url, CARNET_SPIN, CARNET_VIN)
+        remoteUnlock(session, url)
+    elif CARNET_COMMAND == 'startRemoteVentilation':
+        startRemoteAccessVentilation(session, url, CARNET_SPIN, CARNET_VIN)
+    elif CARNET_COMMAND == 'stopRemoteVentilation':
+        stopRemoteAccessVentilation(session, url)
+    elif CARNET_COMMAND == 'startRemoteHeating':
+        startRemoteAccessHeating(session, url, CARNET_SPIN, CARNET_VIN)
+    elif CARNET_COMMAND == 'stopRemoteHeating':
+        stopRemoteAccessHeating(session, url)
     else:
         retrieveCarNetInfo(session, url)
 
