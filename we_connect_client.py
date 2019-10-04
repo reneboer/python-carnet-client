@@ -8,7 +8,8 @@
 
 # Free for use & distribution
 # V2.5 The commands needing a SPIN are now working.
-#      Added commands for getLatestReport', 'getAlerts', 'getGeofences'
+#      Added commands for getLatestReport, getAlerts, getGeofences
+#      Fix for remoteUnlock
 # V2.4 Fix on getting country code for CarNetCheckSecurityLevel
 #      Added commands for remoteUnlock, startRemoteVentilation, stopRemoteVentilation, startRemoteHeating, stopRemoteHeating
 # V2.3 Added command line parser and spin remoteLock
@@ -469,7 +470,7 @@ def remoteLock(session, url_base, spin, vin):
     print(CarNetPostAction(session, url_base, '/-/vsr/remote-lock', post_data))
     return 0
 
-def remoteUnlock(session, url_base):
+def remoteUnlock(session, url_base, spin, vin):
     post_data = {
         'vin': vin, 
         'operationId': 'UNLOCK',
@@ -613,7 +614,7 @@ if __name__ == '__main__':
     elif CARNET_COMMAND == 'remoteLock':
         remoteLock(session, url, CARNET_SPIN, CARNET_VIN)
     elif CARNET_COMMAND == 'remoteUnlock':
-        remoteUnlock(session, url)
+        remoteUnlock(session, url, CARNET_SPIN, CARNET_VIN)
     elif CARNET_COMMAND == 'startRemoteVentilation':
         startRemoteAccessVentilation(session, url, CARNET_SPIN, CARNET_VIN)
     elif CARNET_COMMAND == 'stopRemoteVentilation':
