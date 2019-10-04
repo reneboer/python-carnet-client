@@ -1,13 +1,14 @@
 #!/usr/bin/python
 # Script to emulate VW WE Connect web site login and commands to VW car.
 # Author  : Rene Boer
-# Version : 2.4
-# Date    : 3 Oct 2019
+# Version : 2.5
+# Date    : 4 Oct 2019
 
 # Should work on python 2 and 3
 
 # Free for use & distribution
-
+# V2.5 The commands needing a SPIN are now working.
+#      Added commands for getLatestReport', 'getAlerts', 'getGeofences'
 # V2.4 Fix on getting country code for CarNetCheckSecurityLevel
 #      Added commands for remoteUnlock, startRemoteVentilation, stopRemoteVentilation, startRemoteHeating, stopRemoteHeating
 # V2.3 Added command line parser and spin remoteLock
@@ -457,67 +458,77 @@ def getWindowMelt(session, url_base):
 
 def remoteLock(session, url_base, spin, vin):
     # untested
-    #request_headers['Referer'] = url_base + '/-/service-container/services/all'
     post_data = {
+        'vin': vin, 
         'operationId': 'LOCK',
-        'serviceId': 'rlu_v1',
-        'vin': vin }
+        'serviceId': 'rlu_v1' }
     print(CarNetCheckSecurityLevel(session, url_base, post_data))
     
     post_data = {
-        'spin': spin }
+        'spin': str(spin) }
     print(CarNetPostAction(session, url_base, '/-/vsr/remote-lock', post_data))
-    #request_headers['Referer'] = url_base
     return 0
 
 def remoteUnlock(session, url_base):
-    #request_headers['Referer'] = url_base + '/-/service-container/services/all'
-    print(CarNetPost(session, url_base, '/-/vsr/remote-unlock'))
-    #request_headers['Referer'] = url_base
+    post_data = {
+        'vin': vin, 
+        'operationId': 'UNLOCK',
+        'serviceId': 'rlu_v1' }
+    print(CarNetCheckSecurityLevel(session, url_base, post_data))
+
+    post_data = {
+        'spin': str(spin) }
+    print(CarNetPostAction(session, url_base, '/-/vsr/remote-unlock', post_data))
     return 0
 
 def startRemoteAccessVentilation(session, url_base, spin, vin):
-    # untested
-    #request_headers['Referer'] = url_base + '/-/service-container/services/all'
     post_data = {
+        'vin': vin, 
         'operationId':'P_QSACT',
-        'serviceId':'rheating_v1',
-        'vin': vin }
+        'serviceId':'rheating_v1' }
     print(CarNetCheckSecurityLevel(session, url_base, post_data))
 
     post_data = {
         'startMode':'VENTILATION',
-        'spin': spin }
+        'spin': str(spin) }
     print(CarNetPostAction(session, url_base, '/-/rah/quick-start', post_data))
-    #request_headers['Referer'] = url_base
     return 0
 
 def stopRemoteAccessVentilation(session, url_base):
-    #request_headers['Referer'] = url_base + '/-/service-container/services/all'
     print(CarNetPost(session, url_base, '/-/rah/quick-stop'))
-    #request_headers['Referer'] = url_base
     return 0
 
 def startRemoteAccessHeating(session, url_base, spin, vin):
-    # untested
-    #request_headers['Referer'] = url_base + '/-/service-container/services/all'
     post_data = {
+        'vin': vin, 
         'operationId':'P_QSACT',
-        'serviceId':'rheating_v1',
-        'vin': vin }
+        'serviceId':'rheating_v1' }
     print(CarNetCheckSecurityLevel(session, url_base, post_data))
 
     post_data = {
         'startMode':'HEATING',
-        'spin': spin }
+        'spin': str(spin) }
     print(CarNetPostAction(session, url_base, '/-/rah/quick-start', post_data))
-    #request_headers['Referer'] = url_base
     return 0
 
 def stopRemoteAccessHeating(session, url_base):
-    #request_headers['Referer'] = url_base + '/-/service-container/services/all'
     print(CarNetPost(session, url_base, '/-/rah/quick-stop'))
-    #request_headers['Referer'] = url_base
+    return 0
+
+def getRemoteAccessHeating(session, url_base):
+    print(CarNetPost(session, url_base, '/-/rah/get-status'))
+    return 0
+
+def getLatestReport(session, url_base):
+    print(CarNetPost(session, url_base, '/-/vhr/get-latest-report'))
+    return 0
+
+def getAlerts(session, url_base):
+    print(CarNetPost(session, url_base, '/-/rsa/get-alerts'))
+    return 0
+
+def getGeofences(session, url_base):
+    print(CarNetPost(session, url_base, '/-/geofence/get-fences'))
     return 0
 
 if __name__ == '__main__':
@@ -526,7 +537,7 @@ if __name__ == '__main__':
     parser.add_argument('-u', '--user', required=True, help='Your WE-Connect user id.')
     parser.add_argument('-p', '--password', required=True, help='Your WE-Connect password.')
     parser.add_argument('-v', '--vin', help='Your car VIN if more cars on account.')
-    parser.add_argument('-c', '--command', choices=['startCharge', 'stopCharge', 'getCharge', 'startClimate', 'stopClimate', 'getClimate', 'startWindowMelt', 'stopWindowMelt','getWindowMelt', 'getVIN', 'remoteLock', 'remoteUnlock', 'startRemoteVentilation', 'stopRemoteVentilation', 'startRemoteHeating', 'stopRemoteHeating'], help='Command to send.')
+    parser.add_argument('-c', '--command', choices=['startCharge', 'stopCharge', 'getCharge', 'startClimate', 'stopClimate', 'getClimate', 'startWindowMelt', 'stopWindowMelt','getWindowMelt', 'getVIN', 'remoteLock', 'remoteUnlock', 'startRemoteVentilation', 'stopRemoteVentilation', 'startRemoteHeating', 'stopRemoteHeating', 'getRemoteHeating', 'getLatestReport', 'getAlerts', 'getGeofences'], help='Command to send.')
     parser.add_argument('-s', '--spin', help='Your WE-Connect s-pin needed for some commands.')
     parser.add_argument('-i', '--index', type=int, default=0, choices=range(0, 9), help='To get the VIN for the N-th car.')
     parser.add_argument('-d', '--debug', action="store_true", help='Show debug commands.')
@@ -574,6 +585,10 @@ if __name__ == '__main__':
         CARNET_VIN = resp.get('vin')
         
     if debug: print('Using VIN : ' + CARNET_VIN)
+	
+    # We need to load a car is spin commands are used
+    if CARNET_SPIN:
+        print(CarNetPost(session, url, '/-/mainnavigation/load-car-details/' + CARNET_VIN))
     
     if CARNET_COMMAND == 'startCharge':
         startCharge(session, url)
@@ -607,6 +622,14 @@ if __name__ == '__main__':
         startRemoteAccessHeating(session, url, CARNET_SPIN, CARNET_VIN)
     elif CARNET_COMMAND == 'stopRemoteHeating':
         stopRemoteAccessHeating(session, url)
+    elif CARNET_COMMAND == 'getRemoteHeating':
+        getRemoteAccessHeating(session, url)
+    elif CARNET_COMMAND == 'getLatestReport':
+        getLatestReport(session, url)
+    elif CARNET_COMMAND == 'getGeofences':
+        getGeofences(session, url)
+    elif CARNET_COMMAND == 'getAlerts':
+        getAlerts(session, url)
     else:
         retrieveCarNetInfo(session, url)
 
@@ -615,10 +638,22 @@ if __name__ == '__main__':
     # {"errorCode":"0","actionNotificationList":[{"actionState":"SUCCEEDED","actionType":"STOP","serviceType":"RBC","errorTitle":null,"errorMessage":null}]}
     #print(CarNetPost(session, url, '/-/msgc/get-new-messages'))
     #print(CarNetPost(session, url, '/-/emanager/get-notifications'))
-    #print(CarNetPost(session, url, '/-/msgc/get-new-messages'))
     #print(CarNetPost(session, url, '/-/emanager/get-emanager'))
+	
+    # Get the remote heating request status
+    # After start / stop command it will first report in progress
+    # {"rahRequestStatus":{"state":"REQUEST_IN_PROGRESS"},"errorCode":"0"}
+    # You should look at the notifications until it returns the JSON like this
+    # {"rahRequestStatus":{"state":"REQUEST_SUCCESSFUL"},"errorCode":"0"}
+    #print(CarNetPost(session, url, '/-/rah/get-request-status'))
 
+    # Get the remote lock/unlock status
+    # After lock / unlock command it will first report in progress
+    # {"errorCode":"0","rluRequestStatus":{"status":"REQUEST_IN_PROGRESS","resultData":null}}
+    # You should look at the notifications until it returns the JSON like this
+    # {"rahRequestStatus":{"state":"REQUEST_SUCCESSFUL"},"errorCode":"0"}
+    #print(CarNetPost(session, url, '/-/vsr/get-request-status'))
+	
     # End session properly
     print(CarNetPost(session, url, '/-/logout/revoke'))
     
-
