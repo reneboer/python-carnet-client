@@ -44,7 +44,7 @@ optional arguments:
 
 Command example:
 ```
-python we_connect_client.py -u '<userid>' -p '<pwd>' - startCharge
+python we_connect_client.py -u '<userid>' -p '<pwd>' -c startCharge
 ```
 
 
