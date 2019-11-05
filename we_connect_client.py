@@ -1,12 +1,13 @@
 #!/usr/bin/python
 # Script to emulate VW WE Connect web site login and commands to VW car.
 # Author  : Rene Boer
-# Version : 2.5
-# Date    : 4 Oct 2019
+# Version : 2.6
+# Date    : 5 Nov 2019
 
 # Should work on python 2 and 3
 
 # Free for use & distribution
+# V2.6 Check for SPIN command to be authorized. Do not send if not.
 # V2.5 The commands needing a SPIN are now working.
 #      Added commands for getLatestReport, getAlerts, getGeofences
 #      Fix for remoteUnlock
@@ -287,8 +288,16 @@ def CarNetCheckSecurityLevel(session, url_base, data):
     else:
         cc = 'en'
     url = portal_base_url + '/portal/group/' + cc + '/edit-profile/-/profile/check-security-level'
-    r = session.post(url, json=data, headers=request_headers)
-    return r.text
+    response = session.post(url, json=data, headers=request_headers)
+    if response.status_code != 200:
+        return false, 'Check security failed, HTTP response ' + response.status_code
+    json_data = response.json()
+    errCd = json_data['errorCode']
+    if errCd == "0":
+        return True, 'You are authorized for PIN action' 
+    if errCd == "1" or errCd == "2":
+       return False, 'You are not authorized for PIN action'
+    return False, 'Check security failed'
 
 
 def retrieveCarNetInfo(session, url_base):
@@ -458,16 +467,17 @@ def getWindowMelt(session, url_base):
     return 0
 
 def remoteLock(session, url_base, spin, vin):
-    # untested
     post_data = {
         'vin': vin, 
         'operationId': 'LOCK',
         'serviceId': 'rlu_v1' }
-    print(CarNetCheckSecurityLevel(session, url_base, post_data))
-    
-    post_data = {
-        'spin': str(spin) }
-    print(CarNetPostAction(session, url_base, '/-/vsr/remote-lock', post_data))
+    res, msg = CarNetCheckSecurityLevel(session, url_base, post_data)
+    if res:
+        post_data = {
+            'spin': str(spin) }
+        print(CarNetPostAction(session, url_base, '/-/vsr/remote-lock', post_data))
+    else:	
+        print(msg)
     return 0
 
 def remoteUnlock(session, url_base, spin, vin):
@@ -475,11 +485,14 @@ def remoteUnlock(session, url_base, spin, vin):
         'vin': vin, 
         'operationId': 'UNLOCK',
         'serviceId': 'rlu_v1' }
-    print(CarNetCheckSecurityLevel(session, url_base, post_data))
+    res, msg = CarNetCheckSecurityLevel(session, url_base, post_data)
 
-    post_data = {
-        'spin': str(spin) }
-    print(CarNetPostAction(session, url_base, '/-/vsr/remote-unlock', post_data))
+    if res:
+        post_data = {
+            'spin': str(spin) }
+        print(CarNetPostAction(session, url_base, '/-/vsr/remote-unlock', post_data))
+    else:	
+        print(msg)
     return 0
 
 def startRemoteAccessVentilation(session, url_base, spin, vin):
@@ -487,12 +500,15 @@ def startRemoteAccessVentilation(session, url_base, spin, vin):
         'vin': vin, 
         'operationId':'P_QSACT',
         'serviceId':'rheating_v1' }
-    print(CarNetCheckSecurityLevel(session, url_base, post_data))
+    res, msg = CarNetCheckSecurityLevel(session, url_base, post_data)
 
-    post_data = {
-        'startMode':'VENTILATION',
-        'spin': str(spin) }
-    print(CarNetPostAction(session, url_base, '/-/rah/quick-start', post_data))
+    if res:
+        post_data = {
+            'startMode':'VENTILATION',
+            'spin': str(spin) }
+        print(CarNetPostAction(session, url_base, '/-/rah/quick-start', post_data))
+    else:	
+        print(msg)
     return 0
 
 def stopRemoteAccessVentilation(session, url_base):
@@ -504,12 +520,15 @@ def startRemoteAccessHeating(session, url_base, spin, vin):
         'vin': vin, 
         'operationId':'P_QSACT',
         'serviceId':'rheating_v1' }
-    print(CarNetCheckSecurityLevel(session, url_base, post_data))
+    res, msg = CarNetCheckSecurityLevel(session, url_base, post_data)
 
-    post_data = {
-        'startMode':'HEATING',
-        'spin': str(spin) }
-    print(CarNetPostAction(session, url_base, '/-/rah/quick-start', post_data))
+    if res:
+        post_data = {
+            'startMode':'HEATING',
+            'spin': str(spin) }
+        print(CarNetPostAction(session, url_base, '/-/rah/quick-start', post_data))
+    else:	
+        print(msg)
     return 0
 
 def stopRemoteAccessHeating(session, url_base):
@@ -540,7 +559,7 @@ if __name__ == '__main__':
     parser.add_argument('-v', '--vin', help='Your car VIN if more cars on account.')
     parser.add_argument('-c', '--command', choices=['startCharge', 'stopCharge', 'getCharge', 'startClimate', 'stopClimate', 'getClimate', 'startWindowMelt', 'stopWindowMelt','getWindowMelt', 'getVIN', 'remoteLock', 'remoteUnlock', 'startRemoteVentilation', 'stopRemoteVentilation', 'startRemoteHeating', 'stopRemoteHeating', 'getRemoteHeating', 'getLatestReport', 'getAlerts', 'getGeofences'], help='Command to send.')
     parser.add_argument('-s', '--spin', help='Your WE-Connect s-pin needed for some commands.')
-    parser.add_argument('-i', '--index', type=int, default=0, choices=range(0, 9), help='To get the VIN for the N-th car.')
+    parser.add_argument('-i', '--index', type=int, default=0, choices=range(0, 10), help='To get the VIN for the N-th car.')
     parser.add_argument('-d', '--debug', action="store_true", help='Show debug commands.')
     args = parser.parse_args()
     CARNET_USERNAME = args.user
@@ -577,7 +596,7 @@ if __name__ == '__main__':
         print('Failed to login', msg)
         sys.exit()
         
-    # If a VIN is specified, put that in the base URL so more than just first car can be controlled (not tested)    
+    # If a VIN is specified, put that in the base URL so more than just first car can be controlled    
     if CARNET_VIN:
         vin_start = url.rfind('/',1,-2)
         url = url[0:vin_start+1] + CARNET_VIN + '/'
@@ -589,7 +608,8 @@ if __name__ == '__main__':
 	
     # We need to load a car is spin commands are used
     if CARNET_SPIN:
-        print(CarNetPost(session, url, '/-/mainnavigation/load-car-details/' + CARNET_VIN))
+        response = CarNetPost(session, url, '/-/mainnavigation/load-car-details/' + CARNET_VIN)
+        if debug: print(response)	
     
     if CARNET_COMMAND == 'startCharge':
         startCharge(session, url)
@@ -656,5 +676,6 @@ if __name__ == '__main__':
     #print(CarNetPost(session, url, '/-/vsr/get-request-status'))
 	
     # End session properly
-    print(CarNetPost(session, url, '/-/logout/revoke'))
+    response = CarNetPost(session, url, '/-/logout/revoke')
+    if debug: print(response)	
     
