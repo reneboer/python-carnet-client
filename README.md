@@ -1,4 +1,6 @@
 # python-carnet-client
+FYI. I have no time or options to develop this code further. A newer version can be found at https://github.com/bgewehr/volkswagen-carnet-client. Have fun developing this to the next level.
+
 Python script we_connect_clinet.py emulates the VW WE Connect web site to send commands to your car and get status.
 
 You must have a VW WE Connect (formerly CarNet) userid and password. Also make sure to logon to the portal https://www.portal.volkswagen-we.com first before using the script. The VW site prompts for several items at first logon the script does not handle.
