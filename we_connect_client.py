@@ -1,13 +1,14 @@
 #!/usr/bin/python
 # Script to emulate VW WE Connect web site login and commands to VW car.
 # Author  : Rene Boer
-# Version : 2.6
-# Date    : 5 Nov 2019
+# Version : 2.7
+# Date    : 3 Dec 2019
 
 # Should work on python 2 and 3
 
 # Free for use & distribution
-# V2.6 Check for SPIN command to be authorized. Do not send if not.
+# V2.7 Ignore certificate check on first Get to work a round an SSL error.
+# V2.6 Check for SPIN command to be authorized. Do not send command if not.
 # V2.5 The commands needing a SPIN are now working.
 #      Added commands for getLatestReport, getAlerts, getGeofences
 #      Fix for remoteUnlock
@@ -108,7 +109,7 @@ def CarNetLogin(session, email, password):
     # Get initial CSRF from landing page to get login process started.
     # Python Session handles JSESSIONID cookie
     landing_page_url = base_url + '/portal/en_GB/web/guest/home'
-    landing_page_response = session.get(landing_page_url)
+    landing_page_response = session.get(landing_page_url,verify=False)
     if landing_page_response.status_code != 200:
         return '', 'Failed getting to portal landing page.'
     csrf = extract_csrf(landing_page_response.text)
