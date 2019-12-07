@@ -21,7 +21,7 @@
 # Thanks to birgersp for a number of cleanups and rewrites. See https://github.com/birgersp/carnet-client
 
 debug = False
-cerverify = False
+certverify = False
 
 import re
 import requests
