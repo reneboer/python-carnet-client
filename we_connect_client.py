@@ -1,12 +1,13 @@
 #!/usr/bin/python
 # Script to emulate VW WE Connect web site login and commands to VW car.
 # Author  : Rene Boer
-# Version : 2.7
-# Date    : 3 Dec 2019
+# Version : 2.8
+# Date    : 14 Dec 2019
 
 # Should work on python 2 and 3
 
 # Free for use & distribution
+# V2.8 Surpress certificate warnings when not verrified and not in debug mode
 # V2.7 Ignore certificate check on first Get to work a round an SSL error.
 # V2.6 Check for SPIN command to be authorized. Do not send command if not.
 # V2.5 The commands needing a SPIN are now working.
@@ -27,6 +28,7 @@ import re
 import requests
 import json
 import sys
+import urllib3
 # import correct lib for python v3.x or fallback to v2.x
 try: 
     import urllib.parse as urlparse
@@ -583,7 +585,10 @@ if __name__ == '__main__':
         requests_log = logging.getLogger("urllib3")
         requests_log.setLevel(logging.DEBUG)
         requests_log.propagate = True
-
+    else:
+        if not certverify:
+           urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
+			
     session = requests.Session()
     # Get list of browsers the site can support
     # print(CarNetPost(session, portal_base_url + '/portal/en_GB/web/guest/home', '/-/mainnavigation/get-supported-browsers'))
