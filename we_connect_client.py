@@ -432,6 +432,16 @@ def getClimat(session, url_base):
         print('{"errorCode":"2","errorMsg":"Failed to get current climate state"}')     
     return 0
 
+def setTemperatureForClimate(session, url_base, temperature):
+    post_data = {
+        "chargerMaxCurrent": None,
+        "minChargeLimit": None,
+        "climatisationWithoutHVPower": None,
+        "targetTemperature": temperature
+    }
+    print(CarNetPostAction(session, url_base, '/-/emanager/set-settings', post_data))
+    return 0
+
 def getVIN(session, url_base, index):
     try:
         estat = json.loads(CarNetPost(session, url_base, '/-/mainnavigation/get-fully-loaded-cars'))
@@ -561,7 +571,8 @@ if __name__ == '__main__':
     parser.add_argument('-u', '--user', required=True, help='Your WE-Connect user id.')
     parser.add_argument('-p', '--password', required=True, help='Your WE-Connect password.')
     parser.add_argument('-v', '--vin', help='Your car VIN if more cars on account.')
-    parser.add_argument('-c', '--command', choices=['startCharge', 'stopCharge', 'getCharge', 'startClimate', 'stopClimate', 'getClimate', 'startWindowMelt', 'stopWindowMelt','getWindowMelt', 'getVIN', 'remoteLock', 'remoteUnlock', 'startRemoteVentilation', 'stopRemoteVentilation', 'startRemoteHeating', 'stopRemoteHeating', 'getRemoteHeating', 'getLatestReport', 'getAlerts', 'getGeofences'], help='Command to send.')
+    parser.add_argument('-c', '--command', choices=['startCharge', 'stopCharge', 'getCharge', 'startClimate', 'stopClimate', 'getClimate', 'setTemperatureForClimate', 'startWindowMelt', 'stopWindowMelt','getWindowMelt', 'getVIN', 'remoteLock', 'remoteUnlock', 'startRemoteVentilation', 'stopRemoteVentilation', 'startRemoteHeating', 'stopRemoteHeating', 'getRemoteHeating', 'getLatestReport', 'getAlerts', 'getGeofences'], help='Command to send.')
+    parser.add_argument('-a', '--argument', required=False, help='Set argument for command (ex : temperature value for setTemperatureForClimate)')
     parser.add_argument('-s', '--spin', help='Your WE-Connect s-pin needed for some commands.')
     parser.add_argument('-i', '--index', type=int, default=0, choices=range(0, 10), help='To get the VIN for the N-th car.')
     parser.add_argument('-d', '--debug', action="store_true", help='Show debug commands.')
@@ -575,7 +586,15 @@ if __name__ == '__main__':
         CARNET_COMMAND = args.command
     if args.debug:
         debug = True
+    if args.argument:
+        CARNET_ARGUMENT = args.argument
+    else:
+        CARNET_ARGUMENT=''
 
+    # Test for commands that include an argument
+    if CARNET_COMMAND == 'setTemperatureForClimate' and CARNET_ARGUMENT == '':
+        print('Failed to launch command because argument is required for setTemperatureForClimate')
+        sys.exit()
 
     # Enable debugging of http requests (gives more details on Python 2 than 3 it seems)    
     if debug:
@@ -630,6 +649,8 @@ if __name__ == '__main__':
         stopClimat(session, url)
     elif CARNET_COMMAND == 'getClimat' or CARNET_COMMAND == 'getClimate':
         getClimat(session, url)
+    elif CARNET_COMMAND == 'setTemperatureForClimate':
+        setTemperatureForClimate(session, url, args.argument)
     elif CARNET_COMMAND == 'startWindowMelt':
         startWindowMelt(session, url)
     elif CARNET_COMMAND == 'stopWindowMelt':
