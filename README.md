@@ -15,7 +15,7 @@ It has similar functions and Charging control for electric VW's
 The first two parameters are your userid and password (in single quotes!), the optional third is the command.
 
 Avaible commands to the script are:
-  startCharge, stopCharge, getCharge, startClimat, stopClimat, getClimat, startClimate, getClimate, stopClimate, startWindowMelt, stopWindowMelt, getWindowMelt, getLatestReport, getAlerts, getGeofences
+  startCharge, stopCharge, getCharge, startClimat, stopClimat, getClimat, startClimate, getClimate, stopClimate, setTemperatureForClimate, startWindowMelt, stopWindowMelt, getWindowMelt, getLatestReport, getAlerts, getGeofences
 Commands needing a secure pin  
   remoteUnlock, startRemoteVentilation, stopRemoteVentilation, startRemoteHeating, stopRemoteHeating
 
@@ -24,7 +24,7 @@ If no command is specified the full car status is retreived.
 Usage:
 ```
 usage: we_connect_client.py [-h] -u USER -p PASSWORD [-v VIN]
-                            [-c {startCharge,stopCharge,getCharge,startClimate,stopClimate,getClimate,startWindowMelt,stopWindowMelt,getWindowMelt,getVIN,remoteLock,remoteUnlock,startRemoteVentilation,stopRemoteVentilation,startRemoteHeating,stopRemoteHeating,getRemoteHeating,getLatestReport,getAlerts,getGeofences}]
+                            [-c {startCharge,stopCharge,getCharge,startClimate,stopClimate,getClimate,setTemperatureForClimate, startWindowMelt,stopWindowMelt,getWindowMelt,getVIN,remoteLock,remoteUnlock,startRemoteVentilation,stopRemoteVentilation,startRemoteHeating,stopRemoteHeating,getRemoteHeating,getLatestReport,getAlerts,getGeofences}]
                             [-s SPIN] [-i {0,1,2,3,4,5,6,7,8,9}] [-d]
 
 Control your Connected VW.
@@ -35,12 +35,13 @@ optional arguments:
   -p PASSWORD, --password PASSWORD
                         Your WE-Connect password.
   -v VIN, --vin VIN     Your car VIN if more cars on account.
-  -c {startCharge,stopCharge,getCharge,startClimate,stopClimate,getClimate,startWindowMelt,stopWindowMelt,getWindowMelt,getVIN,remoteLock,remoteUnlock,startRemoteVentilation,stopRemoteVentilation,startRemoteHeating,stopRemoteHeating,getRemoteHeating,getLatestReport,getAlerts,getGeofences}, --command {startCharge,stopCharge,getCharge,startClimate,stopClimate,getClimate,startWindowMelt,stopWindowMelt,getWindowMelt,getVIN,remoteLock,remoteUnlock,startRemoteVentilation,stopRemoteVentilation,startRemoteHeating,stopRemoteHeating,getRemoteHeating,getLatestReport,getAlerts,getGeofences}
+  -c {startCharge,stopCharge,getCharge,startClimate,stopClimate,getClimate,setTemperatureForClimate, startWindowMelt,stopWindowMelt,getWindowMelt,getVIN,remoteLock,remoteUnlock,startRemoteVentilation,stopRemoteVentilation,startRemoteHeating,stopRemoteHeating,getRemoteHeating,getLatestReport,getAlerts,getGeofences}, --command {startCharge,stopCharge,getCharge,startClimate,stopClimate,getClimate,setTemperatureForClimate, startWindowMelt,stopWindowMelt,getWindowMelt,getVIN,remoteLock,remoteUnlock,startRemoteVentilation,stopRemoteVentilation,startRemoteHeating,stopRemoteHeating,getRemoteHeating,getLatestReport,getAlerts,getGeofences}
                         Command to send.
   -s SPIN, --spin SPIN  Your WE-Connect s-pin needed for some commands.
   -i {0,1,2,3,4,5,6,7,8,9}, --index {0,1,2,3,4,5,6,7,8,9}
                         To get the VIN for the N-th car.
   -d, --debug           Show debug commands.
+  -a, --argument        Set argument for command (ex : temperature value for setTemperatureForClimate)
 
 ```
 
