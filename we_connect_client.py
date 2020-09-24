@@ -407,6 +407,14 @@ def getCharge(session, url_base):
         print('{"errorCode":"2","errorMsg":"Failed to get currect charging state"}')    
     return 0
 
+def getSoC(session, url_base):
+    try:
+        estat = json.loads(CarNetPost(session, url_base, '/-/emanager/get-emanager'))
+        print('{"errorCode":"0","batteryPercentage":"' + str(estat.get('EManager').get('rbc').get('status').get('batteryPercentage')) + '"}')
+    except:
+        print('{"errorCode":"2","errorMsg":"Failed to get current batteryPercentage"}')
+    return 0
+
 def startClimat(session, url_base):
     post_data = {
         'triggerAction': True,
@@ -571,7 +579,7 @@ if __name__ == '__main__':
     parser.add_argument('-u', '--user', required=True, help='Your WE-Connect user id.')
     parser.add_argument('-p', '--password', required=True, help='Your WE-Connect password.')
     parser.add_argument('-v', '--vin', help='Your car VIN if more cars on account.')
-    parser.add_argument('-c', '--command', choices=['startCharge', 'stopCharge', 'getCharge', 'startClimate', 'stopClimate', 'getClimate', 'setTemperatureForClimate', 'startWindowMelt', 'stopWindowMelt','getWindowMelt', 'getVIN', 'remoteLock', 'remoteUnlock', 'startRemoteVentilation', 'stopRemoteVentilation', 'startRemoteHeating', 'stopRemoteHeating', 'getRemoteHeating', 'getLatestReport', 'getAlerts', 'getGeofences'], help='Command to send.')
+    parser.add_argument('-c', '--command', choices=['startCharge', 'stopCharge', 'getCharge', 'getSoC', 'startClimate', 'stopClimate', 'getClimate', 'setTemperatureForClimate', 'startWindowMelt', 'stopWindowMelt','getWindowMelt', 'getVIN', 'remoteLock', 'remoteUnlock', 'startRemoteVentilation', 'stopRemoteVentilation', 'startRemoteHeating', 'stopRemoteHeating', 'getRemoteHeating', 'getLatestReport', 'getAlerts', 'getGeofences'], help='Command to send.')
     parser.add_argument('-a', '--argument', required=False, help='Set argument for command (ex : temperature value for setTemperatureForClimate)')
     parser.add_argument('-s', '--spin', help='Your WE-Connect s-pin needed for some commands.')
     parser.add_argument('-i', '--index', type=int, default=0, choices=range(0, 10), help='To get the VIN for the N-th car.')
@@ -643,6 +651,8 @@ if __name__ == '__main__':
         stopCharge(session, url)
     elif CARNET_COMMAND == 'getCharge':
         getCharge(session, url)
+    elif CARNET_COMMAND == 'getSoC':
+        getSoC(session, url)    
     elif CARNET_COMMAND == 'startClimat' or CARNET_COMMAND == 'startClimate':
         startClimat(session, url)
     elif CARNET_COMMAND == 'stopClimat' or CARNET_COMMAND == 'stopClimate':
